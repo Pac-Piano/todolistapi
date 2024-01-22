@@ -84,31 +84,25 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ message: "Login failed" });
   }
 });
-
-app.post("/todos/:userId", async (req, res) => {
+app.post("/todos/", async (req, res) => {
   try {
-    const userId = req.params.userId;
-    const { title, category } = req.body;
+    const { title } = req.body;
+
+    // Validate input
+    if (!title) {
+      return res.status(400).json({ message: "Title is required" });
+    }
 
     const newTodo = new Todo({
       title,
-      category,
       dueDate: moment().format("YYYY-MM-DD"),
     });
 
     await newTodo.save();
-
-    const user = await User.findById(userId);
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
-    }
-
-    user?.todos.push(newTodo._id);
-    await user.save();
-
-    res.status(200).json({ message: "Todo added sucessfully", todo: newTodo });
+    res.status(201).json({ message: "Todo added successfully", todo: newTodo });
   } catch (error) {
-    res.status(200).json({ message: "Todo not added" });
+    console.error("Error adding todo:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
