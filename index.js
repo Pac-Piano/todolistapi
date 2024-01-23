@@ -254,3 +254,40 @@ app.put("/changeStatusTopending/:id", async (req, res) => {
 });
 
 
+
+const blacklistedTokens = new Set();
+
+app.post("/logout", (req, res) => {
+  try {
+    const token = req.headers.authorization.split(" ")[1];
+
+    // Check if the token is in the blacklist
+    if (blacklistedTokens.has(token)) {
+      return res.status(401).json({ message: "Token is already blacklisted" });
+    }
+
+    // Add the token to the blacklist
+    blacklistedTokens.add(token);
+
+    res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    console.log("Logout failed", error);
+    res.status(500).json({ message: "Logout failed" });
+  }
+});
+
+// Middleware to check if the token is blacklisted
+const checkBlacklist = (req, res, next) => {
+  const token = req.headers.authorization.split(" ")[1];
+
+  if (blacklistedTokens.has(token)) {
+    return res.status(401).json({ message: "Token is blacklisted" });
+  }
+
+  next();
+};
+
+// Protected route example
+app.get("/protected", checkBlacklist, (req, res) => {
+  res.status(200).json({ message: "Access granted to protected route" });
+});
