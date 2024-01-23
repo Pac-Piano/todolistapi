@@ -129,27 +129,52 @@ app.post("/PostTodos/Todos", async (req, res) => {
   }
 });
 
-app.put("/UpdateTodos/Todos", async (req, res) => {
+
+
+app.delete("/delete/Todos/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const { title, completed } = req.body;
-    const updatedTodo = await Todo.findByIdAndUpdate(
-      id,
-      { title, completed },
-      { new: true }
-    );
-    res.json(updatedTodo);
+    const todoId = req.params.id;
+
+    // Check if the To-Do ID exists in the database
+    const existingTodo = await Todo.findById(todoId);
+    if (!existingTodo) {
+      return res.status(404).json({ error: "To-Do not found" });
+    }
+
+    // Delete the To-Do
+    await Todo.findByIdAndDelete(todoId);
+
+    res.json({ message: "To-Do deleted successfully" });
   } catch (error) {
+    console.error("Error deleting To-Do:", error.message);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-app.delete("deleteTodos/Todos", async (req, res) => {
+
+app.put("/update/Todos/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    await Todo.findByIdAndDelete(id);
-    res.json({ message: 'Todo deleted successfully' });
+    const todoId = req.params.id;
+
+    // Check if the To-Do ID exists in the database
+    const existingTodo = await Todo.findById(todoId);
+    if (!existingTodo) {
+      return res.status(404).json({ error: "To-Do not found" });
+    }
+
+    // Update the To-Do
+    const { title, completed } = req.body;
+    const updatedTodo = await Todo.findByIdAndUpdate(
+      todoId,
+      { title, completed },
+      { new: true }
+    );
+
+    res.json(updatedTodo);
   } catch (error) {
+    console.error("Error updating To-Do:", error.message);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+
