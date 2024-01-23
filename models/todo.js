@@ -5,6 +5,11 @@ const todoSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  status:{
+    type:String,
+    enum:["pending","completed"],
+    default:"pending"
+   },
   completed: {
     type: Boolean,
     default: false,
