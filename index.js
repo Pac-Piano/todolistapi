@@ -85,32 +85,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.post("/todos/:userId", async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    const { title, category } = req.body;
 
-    const newTodo = new Todo({
-      title,
-      category,
-      dueDate: moment().format("YYYY-MM-DD"),
-    });
-
-    await newTodo.save();
-
-    const user = await User.findById(userId);
-    if (!user) {
-      res.status(404).json({ error: "User not found" });
-    }
-
-    user?.todos.push(newTodo._id);
-    await user.save();
-
-    res.status(200).json({ message: "Todo added sucessfully", todo: newTodo });
-  } catch (error) {
-    res.status(200).json({ message: "Todo not added" });
-  }
-});
 app.get("/users", async (req, res) => {
   try {
     const users = await User.find();
@@ -134,60 +109,47 @@ app.get("/users/:userId/todos", async (req, res) => {
   }
 });
 
-app.patch("/todos/:todoId/complete", async (req, res) => {
+app.get("/getAll/Todos", async (req, res) => {
   try {
-    const todoId = req.params.todoId;
+    const todos = await Todo.find();
+    res.json(todos);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
+app.post("/PostTodos/Todos", async (req, res) => {
+  try {
+    const { title } = req.body;
+    const newTodo = new Todo({ title });
+    const savedTodo = await newTodo.save();
+    res.status(201).json(savedTodo);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.put("/UpdateTodos/Todos", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, completed } = req.body;
     const updatedTodo = await Todo.findByIdAndUpdate(
-      todoId,
-      {
-        status: "completed",
-      },
+      id,
+      { title, completed },
       { new: true }
     );
-
-    if (!updatedTodo) {
-      return res.status(404).json({ error: "Todo not found" });
-    }
-
-    res
-      .status(200)
-      .json({ message: "Todo marked as complete", todo: updatedTodo });
+    res.json(updatedTodo);
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-app.get("/todos/completed/:date", async (req, res) => {
+app.delete("deleteTodos/Todos", async (req, res) => {
   try {
-    const date = req.params.date;
-
-    const completedTodos = await Todo.find({
-      status: "completed",
-      createdAt: {
-        $gte: new Date(`${date}T00:00:00.000Z`), // Start of the selected date
-        $lt: new Date(`${date}T23:59:59.999Z`), // End of the selected date
-      },
-    }).exec();
-
-    res.status(200).json({ completedTodos });
+    const { id } = req.params;
+    await Todo.findByIdAndDelete(id);
+    res.json({ message: 'Todo deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: "Something went wrong" });
-  }
-});
-
-app.get("/todos/count", async (req, res) => {
-  try {
-    const totalCompletedTodos = await Todo.countDocuments({
-      status: "completed",
-    }).exec();
-
-    const totalPendingTodos = await Todo.countDocuments({
-      status: "pending",
-    }).exec();
-
-    res.status(200).json({ totalCompletedTodos, totalPendingTodos });
-  } catch (error) {
-    res.status(500).json({ error: "Network error" });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
