@@ -84,28 +84,41 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ message: "Login failed" });
   }
 });
-app.post("/todos/", async (req, res) => {
-  try {
-    const { title } = req.body;
 
-    // Validate input
-    if (!title) {
-      return res.status(400).json({ message: "Title is required" });
-    }
+app.post("/todos/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const { title, category } = req.body;
 
     const newTodo = new Todo({
       title,
+      category,
       dueDate: moment().format("YYYY-MM-DD"),
     });
 
     await newTodo.save();
-    res.status(201).json({ message: "Todo added successfully", todo: newTodo });
+
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+    }
+
+    user?.todos.push(newTodo._id);
+    await user.save();
+
+    res.status(200).json({ message: "Todo added sucessfully", todo: newTodo });
   } catch (error) {
-    console.error("Error adding todo:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(200).json({ message: "Todo not added" });
   }
 });
-
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.status(200).json({ users });
+  } catch (error) {
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
 app.get("/users/:userId/todos", async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -152,8 +165,8 @@ app.get("/todos/completed/:date", async (req, res) => {
     const completedTodos = await Todo.find({
       status: "completed",
       createdAt: {
-        $gte: new Date(`${date}T00:00:00.000Z`),
-        $lt: new Date(`${date}T23:59:59.999Z`), 
+        $gte: new Date(`${date}T00:00:00.000Z`), // Start of the selected date
+        $lt: new Date(`${date}T23:59:59.999Z`), // End of the selected date
       },
     }).exec();
 
