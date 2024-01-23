@@ -195,7 +195,7 @@ app.put("/update/Todos/:id", async (req, res) => {
   }
 });
 
-app.get("/getPending/Todos", async (req, res) => {
+app.get("/getPendingTodos", async (req, res) => {
   try {
     const pendingTodos = await Todo.find({ status: "pending" });
     res.json(pendingTodos);
@@ -204,17 +204,8 @@ app.get("/getPending/Todos", async (req, res) => {
   }
 });
 
-app.get("/getCompleted/Todos", async (req, res) => {
-  try {
-    const completedTodos = await Todo.find({ status: "completed" });
-    res.json(completedTodos);
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
 
-
-app.put("/changeStatus/:id", async (req, res) => {
+app.put("/changeStatusTocompleted/:id", async (req, res) => {
   try {
     const todoId = req.params.id;
 
@@ -228,6 +219,30 @@ app.put("/changeStatus/:id", async (req, res) => {
     const updatedTodo = await Todo.findByIdAndUpdate(
       todoId,
       { status: "completed" },
+      { new: true }
+    );
+
+    res.json(updatedTodo);
+  } catch (error) {
+    console.error("Error changing status:", error.message);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.put("/changeStatusTopending/:id", async (req, res) => {
+  try {
+    const todoId = req.params.id;
+
+    // Check if the To-Do ID exists in the database
+    const existingTodo = await Todo.findById(todoId);
+    if (!existingTodo) {
+      return res.status(404).json({ error: "To-Do not found" });
+    }
+
+    // Update the status to 'pending'
+    const updatedTodo = await Todo.findByIdAndUpdate(
+      todoId,
+      { status: "pending" },
       { new: true }
     );
 
